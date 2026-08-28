@@ -1,4 +1,4 @@
-name: Build Windows packages
+name: Build Windows package
 
 on:
   push:
@@ -10,18 +10,12 @@ jobs:
       matrix:
         include:
           - name: windows-x64
-            platform: msvc-x64
-            os: windows-latest
-            triplet: x64-windows-static
             win7: OFF
 
           - name: windows7-x64
-            platform: msvc-x64
-            os: windows-latest
-            triplet: x64-windows-static
             win7: ON
 
-    runs-on: ${{ matrix.os }}
+    runs-on: windows-latest
 
     defaults:
       run:
@@ -31,13 +25,10 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Install dependencies
+      - name: VCPKG
         run: |
-          vcpkg.exe install \
-            zlib \
-            libpng \
-            liblzma \
-            --triplet '${{ matrix.triplet }}'
+          vcpkg.exe install zlib libpng liblzma \
+            --triplet 'x64-windows-static'
 
       - name: Configure
         run: |
@@ -47,20 +38,14 @@ jobs:
             -DCMAKE_BUILD_TYPE=Release \
             -DVCMIEXTRACT_WIN7=${{ matrix.win7 }} \
             --toolchain="$VCPKG_INSTALLATION_ROOT/scripts/buildsystems/vcpkg.cmake" \
-            -DVCPKG_TARGET_TRIPLET='${{ matrix.triplet }}'
+            -DVCPKG_TARGET_TRIPLET='x64-windows-static'
 
       - name: Build
         run: cmake --build ./build --config Release
-
-      - name: Package
-        run: |
-          cmake --install ./build \
-            --config Release \
-            --prefix ./package
 
       - name: Upload
         uses: actions/upload-artifact@v4
         with:
           name: vcmiextract-${{ matrix.name }}
           compression-level: 9
-          path: ./package/
+          path: ./build/Release/vcmiextract.exe
