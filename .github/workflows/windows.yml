@@ -26,7 +26,7 @@ jobs:
       run: vcpkg.exe install zlib libpng liblzma --triplet '${{matrix.triplet}}'
 
     - name: Configure
-      run: cmake -S . -B ./build -DCMAKE_BUILD_TYPE=Release -DCMAKE_SYSTEM_VERSION=6.1 -DCMAKE_CXX_FLAGS="/D_WIN32_WINNT=0x0601" -DCMAKE_C_FLAGS="/D_WIN32_WINNT=0x0601" --toolchain="$VCPKG_INSTALLATION_ROOT/scripts/buildsystems/vcpkg.cmake" -DVCPKG_TARGET_TRIPLET='${{matrix.triplet}}'
+      run: cmake -S . -B ./build -DCMAKE_BUILD_TYPE=Release -DCMAKE_SYSTEM_VERSION=6.1 "-DCMAKE_CXX_FLAGS=/D_WIN32_WINNT=0x0601" "-DCMAKE_C_FLAGS=/D_WIN32_WINNT=0x0601" --toolchain="$VCPKG_INSTALLATION_ROOT/scripts/buildsystems/vcpkg.cmake" -DVCPKG_TARGET_TRIPLET='${{matrix.triplet}}'
 
     - name: Build
       run: cmake --build ./build --config Release
