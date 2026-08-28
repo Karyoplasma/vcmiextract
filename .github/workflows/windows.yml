@@ -1,4 +1,4 @@
-name: Build Windows package
+name: Build Windows packages
 
 on:
   push:
@@ -9,31 +9,58 @@ jobs:
     strategy:
       matrix:
         include:
-          - platform: msvc-x64
+          - name: windows-x64
+            platform: msvc-x64
             os: windows-latest
             triplet: x64-windows-static
+            win7: OFF
+
+          - name: windows7-x64
+            platform: msvc-x64
+            os: windows-latest
+            triplet: x64-windows-static
+            win7: ON
+
     runs-on: ${{ matrix.os }}
+
     defaults:
       run:
         shell: bash
 
     steps:
-    - name: Checkout
-      uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
 
-    - name: VCPKG
-      if: ${{ startsWith(matrix.platform, 'msvc') }}
-      run: vcpkg.exe install zlib libpng liblzma --triplet '${{matrix.triplet}}'
+      - name: Install dependencies
+        run: |
+          vcpkg.exe install \
+            zlib \
+            libpng \
+            liblzma \
+            --triplet '${{ matrix.triplet }}'
 
-    - name: Configure
-      run: cmake -S . -B ./build -DCMAKE_BUILD_TYPE=Release --toolchain="$VCPKG_INSTALLATION_ROOT/scripts/buildsystems/vcpkg.cmake" -DVCPKG_TARGET_TRIPLET='${{matrix.triplet}}'
+      - name: Configure
+        run: |
+          cmake \
+            -S . \
+            -B ./build \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DVCMIEXTRACT_WIN7=${{ matrix.win7 }} \
+            --toolchain="$VCPKG_INSTALLATION_ROOT/scripts/buildsystems/vcpkg.cmake" \
+            -DVCPKG_TARGET_TRIPLET='${{ matrix.triplet }}'
 
-    - name: Build
-      run: cmake --build ./build --config Release
+      - name: Build
+        run: cmake --build ./build --config Release
 
-    - name: Upload
-      uses: actions/upload-artifact@v4
-      with:
-        name: vcmiextract-windows-x64.zip
-        compression-level: 9
-        path: ./build/Release/vcmiextract.exe
+      - name: Package
+        run: |
+          cmake --install ./build \
+            --config Release \
+            --prefix ./package
+
+      - name: Upload
+        uses: actions/upload-artifact@v4
+        with:
+          name: vcmiextract-${{ matrix.name }}
+          compression-level: 9
+          path: ./package/
